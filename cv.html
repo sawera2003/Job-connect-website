@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Generator</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<style>
+           body {
+            background-color: #f0f2f5;
+            font-family: 'Arial', sans-serif;
+        }
+        .cv-card {
+            padding: 30px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #fff;
+            margin-top: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .cv-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .cv-header h2 {
+            margin-bottom: 10px;
+            font-size: 28px;
+            color: #333;
+        }
+        .cv-header img {
+            width: 150px;
+            border-radius: 50%;
+            border: 2px solid #007bff;
+            margin-bottom: 15px;
+        }
+        .cv-section {
+            margin-bottom: 15px;
+        }
+        .cv-section h4 {
+            margin-bottom: 5px;
+            color: #007bff;
+        }
+        .cv-section ul {
+            list-style-type: none;
+            padding-left: 0;
+            margin-left: 0;
+        }
+        .form-group label {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .btn {
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            border: none;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .btn-success {
+            background-color: #28a745;
+            border: none;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        .btn-info {
+            background-color: #17a2b8;
+            border: none;
+        }
+        .btn-info:hover {
+            background-color: #138496;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+            border: none;
+        }
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+        #downloadButtons {
+            display: flex;
+            justify-content: space-between;
+        }
+</style>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">CV Generator</h1>
+        <p class="text-center">Fill in the form below to generate your CV</p>
+        <form id="cvForm" onsubmit="return generateCV()">
+            <div class="form-group">
+                <label for="profileImage">Profile Image:</label>
+                <input type="file" id="profileImage" class="form-control" accept="image/*" required>
+            </div>
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" class="form-control" placeholder="Enter your name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" class="form-control" placeholder="Enter your email" required>
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone:</label>
+                <input type="tel" id="phone" class="form-control" placeholder="Enter your phone number" required>
+            </div>
+            <div class="form-group">
+                <label for="summary">Summary:</label>
+                <textarea id="summary" class="form-control" rows="3" placeholder="Enter a brief summary of yourself" required></textarea>
+            </div>
+            <div id="education-section">
+                <label>Education:</label>
+                <div class="education-template mb-3">
+                    <input type="text" class="form-control mb-2" placeholder="Enter your degree" required>
+                    <input type="text" class="form-control mb-2" placeholder="Enter your institution" required>
+                    <input type="text" class="form-control mb-2" placeholder="Enter your graduation date (e.g., June 2023)" required>
+                </div>
+            </div>
+            <button type="button" class="btn btn-secondary mb-3" onclick="addMore('education-section', '.education-template')">Add More Education</button>
+            <div id="experience-section">
+                <label>Work Experience:</label>
+                <div class="experience-template mb-3">
+                    <input type="text" class="form-control mb-2" placeholder="Enter job title">
+                    <input type="text" class="form-control mb-2" placeholder="Enter company">
+                    <input type="text" class="form-control mb-2" placeholder="Enter duration (e.g., 2018-2022)">
+                </div>
+            </div>
+            <button type="button" class="btn btn-secondary mb-3" onclick="addMore('experience-section', '.experience-template')">Add More Experience</button>
+            <div class="form-group">
+                <label for="reference">Reference:</label>
+                <textarea id="reference" class="form-control" rows="3" placeholder="Enter a reference (name, position, contact)"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Generate CV</button>
+        </form>
+
+        <div id="cvOutput" class="cv-card mt-5" style="display: none;"></div>
+        <div id="downloadButtons" class="mt-3" style="display: none;">
+            <button class="btn btn-success" id="downloadPDF">Download as PDF</button>
+            <button class="btn btn-info" id="downloadImage">Download as Image</button>
+            <button class="btn btn-warning" id="shareCV">Share CV</button>
+        </div>
+    </div>
+
+    <script>
+        function addMore(sectionId, templateSelector) {
+            const section = document.getElementById(sectionId);
+            const template = document.querySelector(templateSelector).cloneNode(true);
+            section.appendChild(template);
+        }
+
+        function generateCV() {
+            const name = document.getElementById("name").value;
+            const email = document.getElementById("email").value;
+            const phone = document.getElementById("phone").value;
+            const summary = document.getElementById("summary").value;
+            const profileImageInput = document.getElementById("profileImage");
+            const profileImageURL = URL.createObjectURL(profileImageInput.files[0]);
+
+            const educations = document.querySelectorAll('#education-section .education-template');
+            let educationContent = '';
+            educations.forEach((education) => {
+                const degree = education.querySelector('input[type="text"]').value;
+                const institution = education.querySelectorAll('input[type="text"]')[1].value;
+                const graduationDate = education.querySelectorAll('input[type="text"]')[2].value;
+                educationContent += `<li>${degree}, ${institution}, Graduated: ${graduationDate}</li>`;
+            });
+
+            const experiences = document.querySelectorAll('#experience-section .experience-template');
+            let experienceContent = '';
+            experiences.forEach((experience) => {
+                const jobTitle = experience.querySelector('input[type="text"]').value;
+                const company = experience.querySelectorAll('input[type="text"]')[1].value;
+                const duration = experience.querySelectorAll('input[type="text"]')[2].value;
+                experienceContent += `<li>${jobTitle} at ${company} (${duration})</li>`;
+            });
+
+            const reference = document.getElementById("reference").value;
+
+            const cvHTML = `
+                <div class="cv-header">
+                    <img src="${profileImageURL}" alt="Profile Image">
+                    <h2>${name}</h2>
+                    <h4>Contact Information</h4>
+                    <ul>
+                        <li type="square">Email: ${email}</li>
+                        <li type="square">Phone: ${phone}</li>
+                    </ul>
+                </div>
+                <div class="cv-section">
+                    <h4>Summary</h4>
+                    <p>${summary}</p>
+                </div>
+                <div class="cv-section">
+                    <h4>Education</h4>
+                    <ul>${educationContent}</ul>
+                </div>
+                <div class="cv-section">
+                    <h4>Work Experience</h4>
+                    <ul>${experienceContent}</ul>
+                </div>
+                <div class="cv-section">
+                    <h4>References</h4>
+                    <p>${reference}</p>
+                </div>
+            `;
+
+            document.getElementById("cvOutput").innerHTML = cvHTML;
+            document.getElementById("cvOutput").style.display = 'block';
+            document.getElementById("downloadButtons").style.display = 'block';
+
+            // Store CV content in session storage
+            sessionStorage.setItem('cvContent', cvHTML);
+
+            // Prevent form submission
+            return false;
+        }
+
+        document.getElementById('downloadPDF').addEventListener('click', function() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const cvOutput = document.getElementById('cvOutput');
+            html2canvas(cvOutput).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                doc.addImage(imgData, 'PNG', 10, 10);
+                doc.save('cv.pdf');
+            });
+        });
+
+        document.getElementById('downloadImage').addEventListener('click', function() {
+            html2canvas(document.getElementById('cvOutput')).then(function(canvas) {
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/png');
+                link.download = 'cv.png';
+                link.click();
+            });
+        });
+
+        document.getElementById('shareCV').addEventListener('click', function() {
+            const cvContent = sessionStorage.getItem('cvContent');
+            if (cvContent) {
+                // Open share options (e.g., email, social media)
+                alert("Share your CV by copying the link or through your preferred method!");
+            }
+        });
+    </script>
+</body>
+</html>
